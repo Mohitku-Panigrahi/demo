@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBot - AI-Powered Study Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Add PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
+    <style>
+        :root {
+            --primary: #8A2BE2;
+            --primary-light: #9b45f0;
+            --primary-dark: #7a1dd1;
+            --background-dark: #111827;
+            --background-darker: #0D1321;
+            --text-light: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --card-bg: #1F2937;
+            --card-border: #374151;
+            --success: #10B981;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--background-darker) 0%, var(--background-dark) 100%);
+            color: var(--text-light);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header Styles */
+        header {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logo-icon {
+            color: var(--primary);
+            font-size: 2rem;
+        }
+        
+        nav {
+            display: flex;
+            gap: 30px;
+        }
+        
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+        
+        nav a:hover {
+            color: var(--text-light);
+        }
+        
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        
+        nav a:hover::after {
+            width: 100%;
+        }
+        
+        .cta-button {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        
+        .cta-button:hover {
+            background: var(--primary-light);
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 150px 0 100px;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #8A2BE2, #4F46E5);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+        }
+        
+        .primary-btn:hover {
+            background: var(--primary-light);
+        }
+        
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+        }
+        
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Features Section */
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .section-title p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .features {
+            padding: 80px 0;
+            background: rgba(17, 24, 39, 0.5);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 30px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(138, 43, 226, 0.4);
+        }
+        
+        .feature-icon {
+            background: rgba(138, 43, 226, 0.2);
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .feature-icon .material-icons {
+            font-size: 30px;
+            color: var(--primary);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .feature-card p {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        
+        .feature-list {
+            list-style: none;
+        }
+        
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .feature-list .material-icons {
+            color: var(--primary);
+            font-size: 18px;
+        }
+        
+        /* Tools Section */
+        .tools {
+            padding: 80px 0;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+        
+        .tool-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .tool-icon {
+            background: rgba(138, 43, 226, 0.2);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .tool-icon .material-icons {
+            font-size: 40px;
+            color: var(--primary);
+        }
+        
+        .tool-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .tool-card p {
+            color: var(--text-muted);
+            margin-bottom: 25px;
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--primary);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .upload-area:hover {
+            background: rgba(138, 43, 226, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            margin-bottom: 10px;
+        }
+        
+        .upload-text h4 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .upload-text p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            color: var(--primary);
+        }
+        
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .action-btn:hover {
+            background: var(--primary-light);
+        }
+        
+        .action-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+        
+        /* Results Area */
+        .results {
+            margin-top: 25px;
+            background: rgba(31, 41, 55, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            display: none;
+        }
+        
+        .results h4 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .results-content {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+        }
+        
+        /* How It Works */
+        .how-it-works {
+            padding: 80px 0;
+            background: rgba(17, 24, 39, 0.5);
+        }
+        
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            text-align: center;
+        }
+        
+        .step {
+            padding: 30px 20px;
+        }
+        
+        .step-number {
+            background: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 20px;
+        }
+        
+        .step h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+        
+        .step p {
+            color: var(--text-muted);
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--background-darker);
+            padding: 40px 0;
+            text-align: center;
+            border-top: 1px solid var(--card-border);
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--text-light);
+        }
+        
+        .copyright {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            nav {
+                gap: 15px;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="material-icons logo-icon">auto_awesome</span>
+                    <span>StudyBot</span>
+                </div>
+                <nav>
+                    <a href="#features">Features</a>
+                    <a href="#tools">Study Tools</a>
+                    <a href="#how-it-works">How It Works</a>
+                </nav>
+                <a href="https://cdn.botpress.cloud/webchat/v3.2/shareable.html?configUrl=https://files.bpcontent.cloud/2025/09/19/12/20250919120812-U02J9S5K.json" class="cta-button" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+      <section class="hero">
+        <div class="container">
+            <h1>Unlock Your Fluency Potential</h1>
+            <p>Experience the next generation of learning with our AI chatbot that understands your study needs, provides instant answers, and helps you master any subject with personalized guidance.</p>
+            <div class="button-group">
+                <a z="https://cdn.botpress.cloud/webchat/v3.2/shareable.html?configUrl=https://files.bpcontent.cloud/2025/09/19/12/20250919120812-U02J9S5K.json" class="primary-btn" target="_blank">
+                    <span class="material-icons">rocket_launch</span>
+                    Start Learning Now
+                </a>
+                <a href="https://go.screenpal.com/watch/cTQq0CnDf0x" class="secondary-btn" id="watchDemoBtn" target="_blank">
+                    <span class="material-icons">play_circle</span>
+                    Watch Demo
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>How StudyBot Transforms Learning</h2>
+                <p>Discover how StudyBot transforms your learning experience with cutting-edge AI technology</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <span class="material-icons">person</span>
+                    </div>
+                    <h3>Personalized Learning</h3>
+                    <p>AI-driven insights adapt to your pace & learning style for optimal results.</p>
+                    <ul class="feature-list">
+                        <li><span class="material-icons">check_circle</span> Customized learning paths</li>
+                        <li><span class="material-icons">check_circle</span> Adaptive difficulty levels</li>
+                        <li><span class="material-icons">check_circle</span> Style-based content delivery</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <span class="material-icons">chat</span>
+                    </div>
+                    <h3>Interactive Practice</h3>
+                    <p>Get immediate answers, explanations, and resources, available 24/7.</p>
+                    <ul class="feature-list">
+                        <li><span class="material-icons">check_circle</span> Real-time Q&A support</li>
+                        <li><span class="material-icons">check_circle</span> Interactive exercises</li>
+                        <li><span class="material-icons">check_circle</span> Instant feedback</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <span class="material-icons">trending_up</span>
+                    </div>
+                    <h3>Progress & Mastery</h3>
+                    <p>Track growth, identify gaps, and celebrate milestones with detailed analytics.</p>
+                    <ul class="feature-list">
+                        <li><span class="material-icons">check_circle</span> Performance dashboard</li>
+                        <li><span class="material-icons">check_circle</span> Knowledge gap analysis</li>
+                        <li><span class="material-icons">check_circle</span> Achievement tracking</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Study Tools Section -->
+    <section class="tools" id="tools">
+        <div class="container">
+            <div class="section-title">
+                <h2>AI-Powered Study Tools</h2>
+                <p>Enhance your learning experience with our advanced AI tools</p>
+            </div>
+            
+            <div class="tools-grid">
+                <!-- PDF to Notes Tool -->
+                <div class="tool-card">
+                    <div class="tool-icon">
+                        <span class="material-icons">description</span>
+                    </div>
+                    <h3>PDF to Notes</h3>
+                    <p>Upload a PDF and get AI-generated short notes instantly.</p>
+                    
+                    <div class="upload-area" id="pdfUploadArea">
+                        <div class="upload-icon">
+                            <span class="material-icons">cloud_upload</span>
+                        </div>
+                        <div class="upload-text">
+                            <h4>Upload PDF File</h4>
+                            <p>Click or drag & drop your file here</p>
+                        </div>
+                        <input type="file" class="file-input" id="pdfUpload" accept=".pdf">
+                        <div class="file-info" id="pdfFileInfo" style="display: none;">
+                            <span class="material-icons">description</span>
+                            <span id="pdfFileName">No file selected</span>
+                        </div>
+                    </div>
+                    
+                    <button class="action-btn" id="generateNotesBtn" disabled>
+                        <span class="material-icons">auto_awesome</span>
+                        Generate Notes
+                    </button>
+                    
+                    <div class="results" id="notesResults">
+                        <h4>Generated Notes:</h4>
+                        <div class="results-content" id="notesContent">
+                            Your notes will appear here...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PDF to Quiz Tool -->
+                <div class="tool-card">
+                    <div class="tool-icon">
+                        <span class="material-icons">quiz</span>
+                    </div>
+                    <h3>PDF to Quiz</h3>
+                    <p>Upload a PDF and get 10 important MCQs to test your knowledge.</p>
+                    
+                    <div class="upload-area" id="quizUploadArea">
+                        <div class="upload-icon">
+                            <span class="material-icons">cloud_upload</span>
+                        </div>
+                        <div class="upload-text">
+                            <h4>Upload PDF File</h4>
+                            <p>Click or drag & drop your file here</p>
+                        </div>
+                        <input type="file" class="file-input" id="quizUpload" accept=".pdf">
+                        <div class="file-info" id="quizFileInfo" style="display: none;">
+                            <span class="material-icons">description</span>
+                            <span id="quizFileName">No file selected</span>
+                        </div>
+                    </div>
+                    
+                    <button class="action-btn" id="generateQuizBtn" disabled>
+                        <span class="material-icons">auto_awesome</span>
+                        Generate Quiz
+                    </button>
+                    
+                    <div class="results" id="quizResults">
+                        <h4>Generated Quiz:</h4>
+                        <div class="results-content" id="quizContent">
+                            Your quiz will appear here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-title">
+                <h2>How It Works</h2>
+                <p>Simple steps to enhance your learning experience with StudyBot</p>
+            </div>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Upload Your PDF</h3>
+                    <p>Select any study material in PDF format from your device</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>AI Processing</h3>
+                    <p>Our advanced AI analyzes your document and extracts key information</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Get Results</h3>
+                    <p>Receive summarized notes or quiz questions based on your document</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="material-icons">auto_awesome</span>
+                    <span>StudyBot</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#features">Features</a>
+                    <a href="#tools">Study Tools</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+                <div class="copyright">
+                    &copy; 2023 StudyBot. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Set up PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Function to extract text from PDF
+        async function extractTextFromPDF(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = async function() {
+                    try {
+                        const typedArray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                        
+                        let fullText = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            const pageText = textContent.items.map(item => item.str).join(' ');
+                            fullText += pageText + '\n';
+                        }
+                        
+                        resolve(fullText);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                fileReader.onerror = function(error) {
+                    reject(error);
+                };
+                
+                fileReader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Function to generate notes from text (simplified version)
+        function generateNotesFromText(text) {
+            // In a real implementation, this would call an AI API
+            // For this example, we'll create a simple summary
+            
+            // Extract key sentences (simplified approach)
+            const sentences = text.split(/[.!?]+/);
+            const importantSentences = sentences.filter(sentence => 
+                sentence.length > 30 && 
+                !sentence.toLowerCase().includes('copyright') &&
+                !sentence.toLowerCase().includes('reference')
+            );
+            
+            // Take first 5 important sentences as notes
+            const keyNotes = importantSentences.slice(0, 5);
+            
+            return `
+                <h5 style="color: var(--primary); margin-bottom: 15px;">Key Points from Document:</h5>
+                <ul style="list-style-type: disc; padding-left: 20px; margin-bottom: 20px;">
+                    ${keyNotes.map(note => `<li style="margin-bottom: 8px;">${note.trim()}.</li>`).join('')}
+                </ul>
+                <h5 style="color: var(--primary); margin-bottom: 10px;">Summary:</h5>
+                <p>This document covers important concepts related to the topic. The key points highlighted above represent the most critical information extracted from the PDF content.</p>
+            `;
+        }
+
+        // Function to generate quiz from text (simplified version)
+        function generateQuizFromText(text) {
+            // In a real implementation, this would call an AI API
+            // For this example, we'll create a simple quiz
+            
+            // Extract potential quiz terms (simplified approach)
+            const sentences = text.split(/[.!?]+/);
+            const importantSentences = sentences.filter(sentence => 
+                sentence.length > 20 && sentence.length < 120
+            );
+            
+            // Create quiz questions based on the content
+            let quizHTML = '';
+            
+            for (let i = 0; i < Math.min(3, importantSentences.length); i++) {
+                const sentence = importantSentences[i];
+                const words = sentence.split(' ').filter(word => word.length > 5);
+                
+                if (words.length > 0) {
+                    const keyword = words[Math.floor(Math.random() * words.length)];
+                    const question = sentence.replace(keyword, '__________');
+                    
+                    // Generate options
+                    const options = [
+                        keyword,
+                        words[Math.floor(Math.random() * words.length)],
+                        words[Math.floor(Math.random() * words.length)],
+                        words[Math.floor(Math.random() * words.length)]
+                    ].filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
+                    
+                    // Shuffle options
+                    for (let j = options.length - 1; j > 0; j--) {
+                        const k = Math.floor(Math.random() * (j + 1));
+                        [options[j], options[k]] = [options[k], options[j]];
+                    }
+                    
+                    quizHTML += `
+                        <div class="quiz-question">
+                            <p class="question-text">${i + 1}. ${question}</p>
+                            <div class="quiz-options">
+                                <label class="quiz-option"><input type="radio" name="q${i+1}" value="${options[0]}"> ${options[0]}</label>
+                                <label class="quiz-option"><input type="radio" name="q${i+1}" value="${options[1]}"> ${options[1]}</label>
+                                <label class="quiz-option"><input type="radio" name="q${i+1}" value="${options[2]}"> ${options[2]}</label>
+                                <label class="quiz-option"><input type="radio" name="q${i+1}" value="${options[3]}"> ${options[3]}</label>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            quizHTML += `
+                <button class="action-btn" style="margin-top: 20px;">
+                    <span class="material-icons">check_circle</span>
+                    Submit Answers
+                </button>
+            `;
+            
+            return quizHTML;
+        }
+
+        // File upload functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // PDF to Notes functionality
+            const pdfUpload = document.getElementById('pdfUpload');
+            const pdfUploadArea = document.getElementById('pdfUploadArea');
+            const pdfFileInfo = document.getElementById('pdfFileInfo');
+            const pdfFileName = document.getElementById('pdfFileName');
+            const generateNotesBtn = document.getElementById('generateNotesBtn');
+            const notesResults = document.getElementById('notesResults');
+            const notesContent = document.getElementById('notesContent');
+            
+            // Quiz functionality
+            const quizUpload = document.getElementById('quizUpload');
+            const quizUploadArea = document.getElementById('quizUploadArea');
+            const quizFileInfo = document.getElementById('quizFileInfo');
+            const quizFileName = document.getElementById('quizFileName');
+            const generateQuizBtn = document.getElementById('generateQuizBtn');
+            const quizResults = document.getElementById('quizResults');
+            const quizContent = document.getElementById('quizContent');
+            
+            // Store uploaded files
+            let notesFile = null;
+            let quizFile = null;
+            
+            // Handle PDF upload for notes
+            pdfUpload.addEventListener('change', function(e) {
+                if (e.target.files.length) {
+                    const file = e.target.files[0];
+                    notesFile = file;
+                    pdfFileName.textContent = file.name;
+                    pdfFileInfo.style.display = 'flex';
+                    generateNotesBtn.disabled = false;
+                    
+                    // Change upload area appearance
+                    pdfUploadArea.style.borderColor = 'var(--success)';
+                    pdfUploadArea.querySelector('.upload-icon').innerHTML = '<span class="material-icons">description</span>';
+                    pdfUploadArea.querySelector('h4').textContent = 'File Selected';
+                    pdfUploadArea.querySelector('p').textContent = 'Click to change file';
+                }
+            });
+            
+            // Handle PDF upload for quiz
+            quizUpload.addEventListener('change', function(e) {
+                if (e.target.files.length) {
+                    const file = e.target.files[0];
+                    quizFile = file;
+                    quizFileName.textContent = file.name;
+                    quizFileInfo.style.display = 'flex';
+                    generateQuizBtn.disabled = false;
+                    
+                    // Change upload area appearance
+                    quizUploadArea.style.borderColor = 'var(--success)';
+                    quizUploadArea.querySelector('.upload-icon').innerHTML = '<span class="material-icons">description</span>';
+                    quizUploadArea.querySelector('h4').textContent = 'File Selected';
+                    quizUploadArea.querySelector('p').textContent = 'Click to change file';
+                }
+            });
+            
+            // Generate notes
+            generateNotesBtn.addEventListener('click', async function() {
+                if (!notesFile) return;
+                
+                generateNotesBtn.disabled = true;
+                generateNotesBtn.innerHTML = '<span class="material-icons">autorenew</span> Processing...';
+                
+                try {
+                    // Extract text from PDF
+                    const text = await extractTextFromPDF(notesFile);
+                    
+                    // Generate notes from text
+                    const notes = generateNotesFromText(text);
+                    
+                    // Display results
+                    notesResults.style.display = 'block';
+                    notesContent.innerHTML = notes;
+                } catch (error) {
+                    notesContent.innerHTML = `
+                        <p style="color: #ff6b6b;">Error processing PDF: ${error.message}</p>
+                        <p>Please try again with a different PDF file.</p>
+                    `;
+                    notesResults.style.display = 'block';
+                    console.error('Error processing PDF:', error);
+                }
+                
+                generateNotesBtn.disabled = false;
+                generateNotesBtn.innerHTML = '<span class="material-icons">auto_awesome</span> Generate Notes';
+            });
+            
+            // Generate quiz
+            generateQuizBtn.addEventListener('click', async function() {
+                if (!quizFile) return;
+                
+                generateQuizBtn.disabled = true;
+                generateQuizBtn.innerHTML = '<span class="material-icons">autorenew</span> Processing...';
+                
+                try {
+                    // Extract text from PDF
+                    const text = await extractTextFromPDF(quizFile);
+                    
+                    // Generate quiz from text
+                    const quiz = generateQuizFromText(text);
+                    
+                    // Display results
+                    quizResults.style.display = 'block';
+                    quizContent.innerHTML = quiz;
+                } catch (error) {
+                    quizContent.innerHTML = `
+                        <p style="color: #ff6b6b;">Error processing PDF: ${error.message}</p>
+                        <p>Please try again with a different PDF file.</p>
+                    `;
+                    quizResults.style.display = 'block';
+                    console.error('Error processing PDF:', error);
+                }
+                
+                generateQuizBtn.disabled = false;
+                generateQuizBtn.innerHTML = '<span class="material-icons">auto_awesome</span> Generate Quiz';
+            });
+            
+            // Drag and drop functionality
+            const uploadAreas = document.querySelectorAll('.upload-area');
+            
+            uploadAreas.forEach(area => {
+                area.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = 'var(--primary-light)';
+                    this.style.backgroundColor = 'rgba(138, 43, 226, 0.2)';
+                });
+                
+                area.addEventListener('dragleave', function() {
+                    this.style.borderColor = 'var(--primary)';
+                    this.style.backgroundColor = 'transparent';
+                });
+                
+                area.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = 'var(--success)';
+                    this.style.backgroundColor = 'transparent';
+                    
+                    const fileInput = this.querySelector('.file-input');
+                    if (e.dataTransfer.files.length) {
+                        fileInput.files = e.dataTransfer.files;
+                        const event = new Event('change');
+                        fileInput.dispatchEvent(event);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
